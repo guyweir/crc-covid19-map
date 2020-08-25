@@ -8,6 +8,21 @@ library(reactable)
 library(crosstalk)
 
 selected_data <- readRDS("selected_data_AMR.rds") #AMRs pre-calculated in "Indirect standardisation.R"
+
+#add welsh IMD average MSOA ranks.
+wimd <- read.csv("wimd19MSOA.csv", stringsAsFactors = F)
+
+W_selected_data <- selected_data %>% filter(`Region: `== "(pseudo) Wales") %>% 
+  select(-`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x`,-`IMD MSOA Deciles`)
+
+#add in Wales IMD data
+W_selected_data <- merge(W_selected_data, wimd, by.x = "GEOGRAPHY_CODE", by.y = "MSOA11CD")
+W_selected_data <- W_selected_data %>% rename("Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x" = WIMD.2019,
+                                              "IMD MSOA Deciles" = IMD.MSOA.Deciles)
+#remove old Wales
+selected_data <- na.omit(selected_data)
+selected_data <- bind_rows(selected_data, W_selected_data)
+
 selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`, 
                                            levels = c("1st most deprived", "2","3","4","5","6","7","8","9","10 least deprived" )) #make sure IMD deciles loaded as factor in the correct order
 
@@ -18,6 +33,9 @@ msoanames <- msoanames %>% select(msoa11cd, msoa11hclnm, Laname)
 
 #merge 'em
 selected_data <- merge(selected_data, msoanames, by.x = "GEOGRAPHY_CODE", by.y = "msoa11cd")
+
+
+
 
 #final table selected cols and bit of a tidy up.
 table1 <- selected_data  %>% mutate_at(.vars = "IMD MSOA Deciles", .funs = gsub, pattern = "1st ", replacement = "1 ") %>% 
@@ -140,23 +158,24 @@ m2 <- leaflet(msoas_eandw_db, height = "580px", options = list(padding = 100)) %
   addMapPane(name = "toplayer", zIndex = 420) %>% 
   addMapPane(name = "nottoplayer", zIndex = 410) %>% 
   #addPolygons(data = NUTS1, color = "white",opacity = 1, fillColor = "white", fillOpacity = 1)  %>%        #add london clip
-  addPolygons(fillOpacity = 0, opacity = 0,
+  #labels layer
+  addPolygons(fillOpacity = 0, opacity = 0, 
               label = labels2,
               labelOptions = labelOptions(
                 style = list("font-weight" = "normal", padding = "3px 8px"),
                 textsize = "15px",
                 direction = "auto"),
               options = leafletOptions(pane = "toplayer")) %>% 
-  
+  #boundary line layer not adding much so not rendering
   # addPolygons(weight = 0.5, color = "white",
   #             fillColor = "#D3D3D3",
-  #             
+  # 
   #             label = labels2,
   #             labelOptions = labelOptions(
   #               style = list("font-weight" = "normal", padding = "3px 8px"),
   #               textsize = "15px",
   #               direction = "auto"),
-  #             options = leafletOptions(pane = "nottoplayer")) %>% 
+  #             options = leafletOptions(pane = "nottoplayer")) %>%
   
   
   addCircleMarkers(data = msoa.centroids_eandw_db, group = "circlegw",
@@ -170,7 +189,7 @@ m2 <- leaflet(msoas_eandw_db, height = "580px", options = list(padding = 100)) %
     addLegendCustom(colors = c("grey", "grey", "grey"), 
                   labels = c("10 deaths per 100k","100 deaths per 100k","500 deaths per 100k"),
                   
-                  sizes = c(2.69,4.00,8.97)*2, position = "bottomright" ) %>% 
+                  sizes = c(0.94,3.00,6.71)*2, position = "bottomright" ) %>% 
     addLegend(pal = factpal, values = msoas_eandw$`IMD MSOA Deciles`, labels = levels(msoas_eandw$`IMD MSOA Deciles`), position = "bottomright") %>% 
   removeDrawToolbar(clearFeatures = T) %>% 
  addResetMapButton() 
