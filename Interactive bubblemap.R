@@ -73,7 +73,7 @@ tbl <- reactable(table2, selection = "multiple",
                                  #`COVID-19 deaths age adjusted per 100,000` = colDef(aggregate = "mean",format = colFormat(digits = 0))),
                                  theme = reactableTheme(
                    stripedColor = "#faf8f1",
-                   highlightColor = "#f0f5f9",
+                   highlightColor = "#e5dec4",
                    cellPadding = "6px 10px",
                    style = list(fontFamily = "Arial", fontSize = "12px"),
                    #searchInputStyle = list(width = "100%", fontWeight = "400"),
