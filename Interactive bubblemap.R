@@ -12,15 +12,23 @@ selected_data <- readRDS("selected_data_AMR.rds") #AMRs pre-calculated in "Indir
 #add welsh IMD average MSOA ranks.
 wimd <- read.csv("wimd19MSOA.csv", stringsAsFactors = F)
 
+#filter Wales only from selected data and remove IMD vars
 W_selected_data <- selected_data %>% filter(`Region: `== "(pseudo) Wales") %>% 
-  select(-`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x`,-`IMD MSOA Deciles`)
+  select(-`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x`,
+         -`IMD MSOA Deciles`,
+         -`Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)`,
+         -W_selected_data$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).y`)
+
+
+
+
 
 #add in Wales IMD data
 W_selected_data <- merge(W_selected_data, wimd, by.x = "GEOGRAPHY_CODE", by.y = "MSOA11CD")
 W_selected_data <- W_selected_data %>% rename("Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x" = WIMD.2019,
                                               "IMD MSOA Deciles" = IMD.MSOA.Deciles)
 #remove old Wales
-selected_data <- na.omit(selected_data)
+selected_data <- selected_data %>% filter(!is.na(`IMD MSOA Deciles`))
 selected_data <- bind_rows(selected_data, W_selected_data)
 
 selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`, 
@@ -101,7 +109,7 @@ addLegendCustom <- function(map, colors, labels, sizes, opacity = 0.5, position)
                    labels = labelAdditions, opacity = opacity, position = position))
 }
 
-library(tidyverse)
+
 #selected_data <- readRDS("selected_data.rds")
 selected_data <- selected_data %>% select(GEOGRAPHY_CODE, msoa11hclnm ,`Region: `,
                                           `IMD MSOA Deciles`, covid_per100k_pop,
@@ -203,13 +211,5 @@ m2
 combo <- htmltools::tagList(title,m2, tbl,sources) #I think this makes a combined html object
 browsable(combo)
 
-htmltools::save_html(combo, "map_table3.html") #this saves it as an HTML page in the default folder.
+htmltools::save_html(combo, "index.html") #this saves it as an HTML page in the default folder.
 
-
-# table for paper
-
-head(table1)
-blogtable1 <- table1 %>% arrange(desc(`COVID-19 deaths per 100,000`)) %>% 
-  select(`Neighbourhood name`, Borough, `IMD MSOA Deciles`, `COVID-19 deaths per 100,000`) %>% head(20)
-
-write.csv(blogtable1, "paper.table.csv", row.names = F)
