@@ -72,14 +72,14 @@ tbl <- reactable(table2, selection = "multiple",
                                  #`COVID-19 deaths per 100,000` = colDef(aggregate = "mean",format = colFormat(digits = 0)),
                                  #`COVID-19 deaths age adjusted per 100,000` = colDef(aggregate = "mean",format = colFormat(digits = 0))),
                                  theme = reactableTheme(
-                   stripedColor = "#f6f8fa",
+                   stripedColor = "#faf8f1",
                    highlightColor = "#f0f5f9",
                    cellPadding = "6px 10px",
                    style = list(fontFamily = "Arial", fontSize = "12px"),
                    #searchInputStyle = list(width = "100%", fontWeight = "400"),
-                   headerStyle = list(color = "white",background = "#860611",
-                     "&:hover[aria-sort]" = list(background = "#B25F52 "),
-                     "&[aria-sort='ascending'], &[aria-sort='descending']" = list(background = "#B25F52 "),
+                   headerStyle = list(color = "white",background = "#2A2A2A",
+                     "&:hover[aria-sort]" = list(background = "#8c8c8c "),
+                     "&[aria-sort='ascending'], &[aria-sort='descending']" = list(background = "#8c8c8c"),
                      borderColor = "#555"
                                         )
                  )) 
@@ -151,17 +151,17 @@ msoa.centroids_eandw_db <- SharedData$new(msoa.centroids_eandw, group = "Neighbo
 library(htmltools)
 
 #page element title
-title <- tags$div(HTML("COVID-19 deaths per 100,000 and deprivation,<br> March to May 2020, London</br>"), 
-  style = "font-family: arial;color: #860611;font-weight: bold; font-size: 25px; text-align: center"
+title <- tags$div(HTML("COVID-19 deaths per 100,000 and deprivation,<br> March to May 2020, England and Wales</br>"), 
+  style = "font-family: Open Sans;color: #2A2A2A;font-weight: bold; font-size: 22px; text-align: center"
 )
 
 #page element data sources
-sources <- tags$div(HTML("Sources: Indices of Multiple Deprivation, MHCLG; Deaths involving COVID-19 by local area and deprivation, ONS<br> Analysis: WPI Economics on behalf of Trust for London"), 
-                  style = "font-family: arial;color: #666666;font-style: italic; font-size: 12px; text-align: left"
+sources <- tags$div(HTML("Sources: Indices of Multiple Deprivation, MHCLG; Welsh Index of Multiple Deprivation 2019; Deaths involving COVID-19 by local area and deprivation, ONS<br> Analysis: WPI Economics on behalf of CRC, originally produced for Trust for London<br>Note: Deprivation ranks are relative to England and Wales separately"), 
+                  style = "font-family: Open Sans;color: #2A2A2A;font-style: italic; font-size: 12px; text-align: left"
 )
 
 #map element
-m2 <- leaflet(msoas_eandw_db, height = "580px", options = list(padding = 100)) %>% setView(-3.5,55.4, 5.5) %>% 
+m2 <- leaflet(msoas_eandw_db, height = "580px", options = list(padding = 100)) %>% setView(-3.5,53.2, 5.5) %>% 
   setMapWidgetStyle(list(background = "white")) %>% addProviderTiles(providers$CartoDB.Positron, providerTileOptions(opacity = 1) ) %>% 
   addMapPane(name = "toplayer", zIndex = 420) %>% 
   addMapPane(name = "nottoplayer", zIndex = 410) %>% 
@@ -211,5 +211,7 @@ m2
 combo <- htmltools::tagList(title,m2, tbl,sources) #I think this makes a combined html object
 browsable(combo)
 
-htmltools::save_html(combo, "index.html") #this saves it as an HTML page in the default folder.
+############# Move index.html and lib folder manually into /docs htmltools doesn't support detailed file paths :( )
+htmltools::save_html(combo, "index.html", background = "#FFFCF1") #this saves it as an HTML page in the default folder.
+
 
