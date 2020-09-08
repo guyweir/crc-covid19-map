@@ -1,5 +1,8 @@
 #### Creates an HTML page with bubble map and MSOA table selectable boxes for the map.
 
+#'NOTE ON DATA COVERAGE
+#'Scotland produce mortality data by intermediate zones (equivalent to MSOAs) over the same time period as ONS do for E&W - 01 March to 31st July
+#'NI produce Local Government District which look much larger than MSOAs so NOT extending to NI
 
 #age adjustment weights and table
 
