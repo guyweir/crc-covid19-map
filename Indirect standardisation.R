@@ -14,7 +14,7 @@ EandWpops2 <- EandWpops %>% filter(C_AGE_NAME %in% ages)
 EandWpops2 <- EandWpops2 %>% select(C_AGE_NAME, OBS_VALUE) %>%  group_by(C_AGE_NAME) %>%  summarise(Population = sum(OBS_VALUE))
 
 
-msoa_pops_allages <- nomis_get_data(id = "NM_2010_1", geography = "TYPE297", sex = "Total", date = "latest", measures = "20100", C_AGE_NAME %in% ages)
+#msoa_pops_allages <- nomis_get_data(id = "NM_2010_1", geography = "TYPE297", sex = "Total", date = "latest", measures = "20100", C_AGE_NAME %in% ages)
 msoa_pops_allages2 <- msoa_pops_allages %>% filter(C_AGE_NAME %in% ages)
 
 msoa_covid <- read_excel("referencetables1.xlsx", sheet = "Table 5", range = "A13:J7214")
@@ -42,8 +42,46 @@ COVID19_byage$`Age specific COVID19 mortality rate` <- (COVID19_byage$`COVID-19 
 ######################## GOT TO GET SCOT POPS BY 5 YR AGE BANDS########################
 #######################################################################################
 
-msoa_pops_allages2 <- msoa_pops_allages2 %>% select(GEOGRAPHY_CODE, GEOGRAPHY_NAME,C_AGE_NAME,OBS_VALUE)
+library(httr)
+library(jsonlite)
+call <- "https://www.opendata.nhs.scot/api/3/action/datastore_search?resource_id=93df4c88-f74b-4630-abd8-459a19b12f47&q=2019&limit=10000"
+#GETresult <- GET(call, type = "basic")
+foo <- content(GETresult, "text")
+foo_json <- fromJSON(foo, flatten = T)
+scotpopsage <- foo_json[["result"]][["records"]]
+scotpopsage <- filter(scotpopsage,Year == 2019 & Sex == "All")
 
+#group into age bands
+scotpopsage <- scotpopsage %>% mutate(`Age 0 - 4` = select(.,`Age0`:`Age4`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 5-9` = select(.,`Age5`:`Age9`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 10-14` = select(.,`Age10`:`Age14`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 15-19` = select(.,`Age15`:`Age19`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 20-24` = select(.,`Age20`:`Age24`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 25-29` = select(.,`Age25`:`Age29`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 30-34` = select(.,`Age30`:`Age34`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 35-39` = select(.,`Age35`:`Age39`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 40-44` = select(.,`Age40`:`Age44`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 45-49` = select(.,`Age45`:`Age49`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 50-54` = select(.,`Age50`:`Age54`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 55-59` = select(.,`Age55`:`Age59`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 60-64` = select(.,`Age60`:`Age64`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 65-69` = select(.,`Age65`:`Age69`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 70-74` = select(.,`Age70`:`Age74`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 75-79` = select(.,`Age75`:`Age79`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 80-84` = select(.,`Age80`:`Age84`) %>% apply(1, sum, na.rm=TRUE))
+scotpopsage <- scotpopsage %>% mutate(`Aged 85+` = select(.,`Age85`:`Age90plus`) %>% apply(1, sum, na.rm=TRUE))
+
+#scotpopsage <- scotpopsage %>% mutate(`SUMCHECK` = select(.,`Age 0 - 4`:`Age 85+`) %>% apply(1, sum, na.rm=TRUE))
+  
+#select reshape and rename variables to match the MSOA data.
+scotpopsage <- scotpopsage %>%  select(IntZone, SexQF, `Age 0 - 4`:`Aged 85+`) %>% rename("GEOGRAPHY_CODE" = IntZone, "GEOGRAPHY_NAME" = SexQF)
+scotpopsage <- pivot_longer(scotpopsage,cols = (3:20),names_to = "C_AGE_NAME", values_to = "OBS_VALUE" )
+
+msoa_pops_allages2 <- msoa_pops_allages2 %>% select(GEOGRAPHY_CODE, GEOGRAPHY_NAME,C_AGE_NAME,OBS_VALUE)
+#rbind the scottish data
+msoa_pops_allages2 <- bind_rows(msoa_pops_allages2, scotpopsage)
+
+#add in the expected rates
 msoa_pops_allages2 <- merge(msoa_pops_allages2, COVID19_byage[,c(1,4)],by = "C_AGE_NAME" )
 
 
@@ -61,7 +99,9 @@ cruderate <- sumdeaths/sumpop
 
 msoa_covid$`COVID-19 AMR` <-  (cruderate * msoa_covid$SMR)*100000
 
-selected_data <- merge(selected_data,msoa_covid,by = "GEOGRAPHY_CODE")
+write.csv(msoa_covid,file = "msoa_IZ_covid_Indirect_results.csv", row.names = F )
 
-saveRDS(selected_data,file = "selected_data_AMR.rds")
+# selected_data <- merge(selected_data,msoa_covid,by = "GEOGRAPHY_CODE")
+# 
+# saveRDS(selected_data,file = "selected_data_AMR.rds")
 
