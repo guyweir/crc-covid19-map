@@ -15,7 +15,9 @@ EandWpops2 <- EandWpops2 %>% select(C_AGE_NAME, OBS_VALUE) %>%  group_by(C_AGE_N
 
 
 #msoa_pops_allages <- nomis_get_data(id = "NM_2010_1", geography = "TYPE297", sex = "Total", date = "latest", measures = "20100", C_AGE_NAME %in% ages)
-msoa_pops_allages2 <- msoa_pops_allages %>% filter(C_AGE_NAME %in% ages)
+# msoa_pops_allages2 <- msoa_pops_allages %>% filter(C_AGE_NAME %in% ages)
+# saveRDS(msoa_pops_allages2, file = "msoapops.rds")
+msoa_pops_allages2 <- readRDS("msoapops.rds")
 
 msoa_covid <- read_excel("referencetables1.xlsx", sheet = "Table 5", range = "A13:J7214")
 msoa_covid <- msoa_covid %>% select(1,10) %>% rename(`GEOGRAPHY_CODE` = 1, `COVID-19` = 2)
@@ -45,7 +47,7 @@ COVID19_byage$`Age specific COVID19 mortality rate` <- (COVID19_byage$`COVID-19 
 library(httr)
 library(jsonlite)
 call <- "https://www.opendata.nhs.scot/api/3/action/datastore_search?resource_id=93df4c88-f74b-4630-abd8-459a19b12f47&q=2019&limit=10000"
-#GETresult <- GET(call, type = "basic")
+GETresult <- GET(call, type = "basic")
 foo <- content(GETresult, "text")
 foo_json <- fromJSON(foo, flatten = T)
 scotpopsage <- foo_json[["result"]][["records"]]
@@ -87,7 +89,7 @@ msoa_pops_allages2 <- merge(msoa_pops_allages2, COVID19_byage[,c(1,4)],by = "C_A
 
 msoa_pops_allages2$expected <- msoa_pops_allages2$OBS_VALUE * msoa_pops_allages2$`Age specific COVID19 mortality rate`
 #now add up all the ages
-msoa_pops_total <- msoa_pops_allages2 %>% group_by(GEOGRAPHY_CODE) %>% summarise(expected = sum(expected))
+msoa_pops_total <- msoa_pops_allages2 %>% group_by(GEOGRAPHY_CODE) %>% summarise(expected = sum(expected), population = sum(OBS_VALUE))
 
 msoa_covid <- merge(msoa_pops_total, msoa_covid, by = "GEOGRAPHY_CODE")
 
@@ -98,6 +100,8 @@ sumpop <- sum(EandWpops2$Population)
 cruderate <- sumdeaths/sumpop
 
 msoa_covid$`COVID-19 AMR` <-  (cruderate * msoa_covid$SMR)*100000
+msoa_covid$covid_per100k_pop <- (msoa_covid$`COVID-19`/msoa_covid$population)*100000
+msoa_covid$covid_per100k_pop <- round(msoa_covid$covid_per100k_pop,0)
 
 write.csv(msoa_covid,file = "msoa_IZ_covid_Indirect_results.csv", row.names = F )
 
