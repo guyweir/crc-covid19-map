@@ -4,15 +4,24 @@
 #'Scotland produce mortality data by intermediate zones (equivalent to MSOAs) over the same time period as ONS do for E&W - 01 March to 31st July
 #'NI produce Local Government District which look much larger than MSOAs so NOT extending to NI
 
-#age adjustment weights and table
-
+#######################
+##### LOAD DATA #######
+#######################
 library(tidyverse)
 library(reactable)
 library(crosstalk)
 
-selected_data <- readRDS("selected_data_AMR.rds") #AMRs pre-calculated in "Indirect standardisation.R"
+selected_data <- readRDS("selected_data_AMR.rds") #AMRs pre-calculated in "Indirect standardisation.R" original data used in LPP covid regression
+AMRs <- read.csv("msoa_IZ_covid_Indirect_results.csv", stringsAsFactors = F) #new data covering March to July including scotland
 
-#add welsh IMD average MSOA ranks.
+#create nice new dataset with the variables from original data and the new COVID mortality with SMR AMRs etc.
+selected_data2 <- merge(selected_data[,c(1,76,80,81,82)], AMRs, by = "GEOGRAPHY_CODE")
+
+
+#######################
+##### add welsh IMD average MSOA ranks. #######
+#######################
+
 wimd <- read.csv("wimd19MSOA.csv", stringsAsFactors = F)
 
 #filter Wales only from selected data and remove IMD vars
@@ -21,9 +30,6 @@ W_selected_data <- selected_data %>% filter(`Region: `== "(pseudo) Wales") %>%
          -`IMD MSOA Deciles`,
          -`Index of Multiple Deprivation (IMD) Decile (where 1 is most deprived 10% of LSOAs)`,
          -W_selected_data$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).y`)
-
-
-
 
 
 #add in Wales IMD data
@@ -45,7 +51,7 @@ msoanames <- msoanames %>% select(msoa11cd, msoa11hclnm, Laname)
 #merge 'em
 selected_data <- merge(selected_data, msoanames, by.x = "GEOGRAPHY_CODE", by.y = "msoa11cd")
 
-
+#
 
 
 #final table selected cols and bit of a tidy up.
