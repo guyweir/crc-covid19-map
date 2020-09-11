@@ -36,7 +36,7 @@ W_selected_data <- merge(W_selected_data, wimd, by.x = "GEOGRAPHY_CODE", by.y = 
 W_selected_data <- W_selected_data %>% rename("Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x" = WIMD.2019,
                                               "IMD MSOA Deciles" = IMD.MSOA.Deciles)
 #remove old Wales
-selected_data <- selected_data %>% filter(!is.na(`IMD MSOA Deciles`))
+selected_data <- selected_data %>% filter(!str_detect(GEOGRAPHY_CODE, "W0"))
 selected_data <- bind_rows(selected_data, W_selected_data)
 
 selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`, 
@@ -49,46 +49,18 @@ selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`,
 
 simd <- read.csv("simd20IZ.csv", stringsAsFactors = F)
 
-# simd2 <- tibble(GEOGRAPHY_CODE = simd$IZ2011_Code, 
-#                 `Region: ` = "Scotland",
-#                 `Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x` = simd$SIMD2020v2_Rank,
-#                 `IMD MSOA Deciles` = simd$IMD.IZ.Deciles)
-
 #####AND MERGE THEM!#####
 
 #filter Wales only from selected data and remove IMD vars
 S_selected_data <- selected_data %>% filter(str_detect(GEOGRAPHY_CODE, "S0")) %>% 
   select(-`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x`,
-         -`IMD MSOA Deciles`)
+         -`IMD MSOA Deciles`, -`House of Commons Library MSOA Names`)
 
 
 #add in Wales IMD data
 S_selected_data <- merge(S_selected_data, simd, by.x = "GEOGRAPHY_CODE", by.y = "IZ2011_Code")
 S_selected_data <- S_selected_data %>% rename("Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x" = SIMD2020v2_Rank,
                                               "IMD MSOA Deciles" = IMD.IZ.Deciles)
-#remove old Scotland
-selected_data <- selected_data %>% filter(!is.na(`IMD MSOA Deciles`))
-selected_data <- bind_rows(selected_data, S_selected_data)
-
-selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`, 
-                                           levels = c("1st most deprived", "2","3","4","5","6","7","8","9","10 least deprived" )) #make sure IMD deciles loaded as factor in the correct order
-
-
-
-
-
-
-
-
-
-#remove old Wales
-selected_data <- selected_data %>% filter(!is.na(`IMD MSOA Deciles`))
-selected_data <- bind_rows(selected_data, W_selected_data)
-
-selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`, 
-                                           levels = c("1st most deprived", "2","3","4","5","6","7","8","9","10 least deprived" )) #make sure IMD deciles loaded as factor in the correct order
-
-
 
 #add msoa and LA place names
 msoanames <- read_csv("MSOA-Names-v1.1.0.csv")
@@ -101,9 +73,21 @@ izcodes <- izcodes %>% select(IZ2011_Code, IZ2011_Name)
 izcodes <- izcodes[!duplicated(izcodes$IZ2011_Code),]
 izcodes <- izcodes %>% rename("msoa11cd" =IZ2011_Code, "msoa11hclnm" = IZ2011_Name)
 msoanames <- bind_rows(msoanames, izcodes)
+msoanames <- msoanames %>% rename(`House of Commons Library MSOA Names` = "msoa11hclnm")
 
 #merge 'em
-selected_data <- merge(selected_data, msoanames, by.x = "GEOGRAPHY_CODE", by.y = "msoa11cd")
+S_selected_data <- merge(S_selected_data, msoanames, by.x = "GEOGRAPHY_CODE", by.y = "msoa11cd")
+
+#remove old Scotland
+selected_data <- selected_data %>% filter(!is.na(`IMD MSOA Deciles`))
+selected_data <- bind_rows(selected_data, S_selected_data)
+
+selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`, 
+                                           levels = c("1st most deprived", "2","3","4","5","6","7","8","9","10 least deprived" )) #make sure IMD deciles loaded as factor in the correct order
+
+
+
+
 
 #
 
@@ -174,24 +158,27 @@ addLegendCustom <- function(map, colors, labels, sizes, opacity = 0.5, position)
 
 
 #selected_data <- readRDS("selected_data.rds")
-selected_data <- selected_data %>% select(GEOGRAPHY_CODE, msoa11hclnm ,`Region: `,
+selected_data <- selected_data %>% select(GEOGRAPHY_CODE, `House of Commons Library MSOA Names`,`Region: `,
                                           `IMD MSOA Deciles`, covid_per100k_pop,
                                           `COVID.19`,`COVID.19.AMR`,
                                           `Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x`) %>% 
   rename("COVID-19 Adjusted Mortality Rate per 100,000" = `COVID.19.AMR`)
 
-msoas <- geojson_sf("https://opendata.arcgis.com/datasets/87aa4eb6393644768a5f85929cc704c2_0.geojson") #super generalised (20m) - clipped to the coastline (Mean High Water mark); 
-iz <- 
-#merge data and MSOA boundaries
+msoas <- geojson_sp("https://opendata.arcgis.com/datasets/87aa4eb6393644768a5f85929cc704c2_0.geojson") #super generalised (20m) - clipped to the coastline (Mean High Water mark); 
+
+
+#merge data and MSOA/iz boundaries
 msoas_eandw <- merge(msoas, selected_data, by.x = "MSOA11CD", by.y = "GEOGRAPHY_CODE", all.y = T) #merge in our data
 
-msoa.centroids <- geojson_sf("https://opendata.arcgis.com/datasets/b0a6d8a3dc5d4718b3fd62c548d60f81_0.geojson")
+msoa.centroids <- geojson_sp("https://opendata.arcgis.com/datasets/b0a6d8a3dc5d4718b3fd62c548d60f81_0.geojson")
 msoa.centroids_eandw <- merge(msoa.centroids, selected_data, by.x = "msoa11cd", by.y = "GEOGRAPHY_CODE", all.y = T) #merge in our data
 msoa.centroids_eandw$`COVID-19sq_per100k_pop` <- sqrt(msoa.centroids_eandw$covid_per100k_pop)*0.3 #create square root metrics for circle radius's
 msoa.centroids_eandw$`COVID-19sq_ageadjusted_per100k_pop` <- sqrt(as.numeric(msoa.centroids_eandw$`COVID-19 Adjusted Mortality Rate per 100,000`))*0.3
 
+
+
 #get region layer to make clip layer
-NUTS1 <- geojson_sf("https://opendata.arcgis.com/datasets/01fd6b2d7600446d8af768005992f76a_3.geojson")
+#NUTS1 <- geojson_sf("https://opendata.arcgis.com/datasets/01fd6b2d7600446d8af768005992f76a_3.geojson")
 #NUTS1 <- NUTS1 %>% filter(nuts118nm != "London")
 
 
@@ -200,13 +187,15 @@ factpal <- colorFactor("RdBu",levels = levels(msoa.centroids_eandw$`IMD MSOA Dec
 #with age adjusted data
 
 labels2 <- sprintf("<strong>%s</strong><br/>%g COVID-19 AMR per 100k<sup></sup>",
-                   msoas_eandw$msoa11hclnm, round(msoas_eandw$`COVID-19 Adjusted Mortality Rate per 100,000`,0)) %>% lapply(htmltools::HTML)
+                   msoas_eandw$`House of Commons Library MSOA Names`, round(msoas_eandw$`COVID-19 Adjusted Mortality Rate per 100,000`,0)) %>% lapply(htmltools::HTML)
+
 
 factpal2 <- colorFactor("RdBu",domain = levels(msoa.centroids_eandw$`IMD MSOA Deciles`), ordered = TRUE )
 
+
+
 msoas_eandw_db <- SharedData$new(msoas_eandw, group = "Neighbourhood name") #sets the link to the interactive table
 msoa.centroids_eandw_db <- SharedData$new(msoa.centroids_eandw, group = "Neighbourhood name")
-
 
 #####################
 
