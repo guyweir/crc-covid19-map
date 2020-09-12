@@ -215,7 +215,7 @@ m2
 
 
 
-combo <- htmltools::tagList(title,m2, tbl,sources) #I think this makes a combined html object
+combo <- htmltools::tagList(m2, tbl,sources) #I think this makes a combined html object
 browsable(combo)
 
 ############# Move index.html and lib folder manually into /docs htmltools doesn't support detailed file paths :( )
