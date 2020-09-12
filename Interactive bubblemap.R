@@ -42,55 +42,6 @@ selected_data <- bind_rows(selected_data, W_selected_data)
 selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`, 
                                            levels = c("1st most deprived", "2","3","4","5","6","7","8","9","10 least deprived" )) #make sure IMD deciles loaded as factor in the correct order
 
-#######################
-##### add Scottish IMD average MSOA ranks. #######
-#######################
-
-
-simd <- read.csv("simd20IZ.csv", stringsAsFactors = F)
-
-#####AND MERGE THEM!#####
-
-#filter Wales only from selected data and remove IMD vars
-S_selected_data <- selected_data %>% filter(str_detect(GEOGRAPHY_CODE, "S0")) %>% 
-  select(-`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x`,
-         -`IMD MSOA Deciles`, -`House of Commons Library MSOA Names`)
-
-
-#add in Wales IMD data
-S_selected_data <- merge(S_selected_data, simd, by.x = "GEOGRAPHY_CODE", by.y = "IZ2011_Code")
-S_selected_data <- S_selected_data %>% rename("Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x" = SIMD2020v2_Rank,
-                                              "IMD MSOA Deciles" = IMD.IZ.Deciles)
-
-#add msoa and LA place names
-msoanames <- read_csv("MSOA-Names-v1.1.0.csv")
-#keep just the LA and msoa name columns
-msoanames <- msoanames %>% select(msoa11cd, msoa11hclnm, Laname)
-#add scotland intermediate zones
-#lsoa to msoa lookup
-izcodes <- read_csv("Datazone2011lookup.csv")
-izcodes <- izcodes %>% select(IZ2011_Code, IZ2011_Name)
-izcodes <- izcodes[!duplicated(izcodes$IZ2011_Code),]
-izcodes <- izcodes %>% rename("msoa11cd" =IZ2011_Code, "msoa11hclnm" = IZ2011_Name)
-msoanames <- bind_rows(msoanames, izcodes)
-msoanames <- msoanames %>% rename(`House of Commons Library MSOA Names` = "msoa11hclnm")
-
-#merge 'em
-S_selected_data <- merge(S_selected_data, msoanames, by.x = "GEOGRAPHY_CODE", by.y = "msoa11cd")
-
-#remove old Scotland
-selected_data <- selected_data %>% filter(!is.na(`IMD MSOA Deciles`))
-selected_data <- bind_rows(selected_data, S_selected_data)
-
-selected_data$`IMD MSOA Deciles` <- factor(selected_data$`IMD MSOA Deciles`, 
-                                           levels = c("1st most deprived", "2","3","4","5","6","7","8","9","10 least deprived" )) #make sure IMD deciles loaded as factor in the correct order
-
-
-
-
-
-#
-
 
 #final table selected cols and bit of a tidy up.
 table1 <- selected_data  %>% mutate_at(.vars = "IMD MSOA Deciles", .funs = gsub, pattern = "1st ", replacement = "1 ") %>% 
