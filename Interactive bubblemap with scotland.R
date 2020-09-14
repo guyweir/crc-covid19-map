@@ -19,7 +19,12 @@ selected_data <- selected_data[,c(1,6,85,42,46,48)]
 
 #create nice new dataset with the variables from original data and the new COVID mortality with SMR AMRs etc.
 selected_data <- merge(selected_data, AMRs, by = "GEOGRAPHY_CODE", all.y = T)
+selected_data$scotflag <- NA
+selected_data$scotflag[str_detect(selected_data$GEOGRAPHY_CODE,"S0")] <- "Scotland"
+selected_data$scotflag[str_detect(selected_data$GEOGRAPHY_CODE,"E0|W0")] <- "England&Wales"
 
+
+selected_data <-  selected_data  %>% group_by(scotflag) %>% mutate(`IMD quintiles` = ntile(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x`, 5))
 
 #######################
 ##### add welsh IMD average MSOA ranks. #######
