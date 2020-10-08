@@ -168,7 +168,8 @@ sources <- tags$div(HTML("Sources: Indices of Multiple Deprivation, MHCLG; Welsh
 )
 
 #map element
-m2 <- leaflet(msoas_eandw_db, height = "580px", options = list(padding = 100)) %>% setView(-3.5,53.2, 5.5) %>% 
+m2 <- leaflet(msoas_eandw_db, height = "580px", options = leafletOptions(zoomSnap = 0, zoomDelta = 0.1, padding = 100)) %>% 
+  setView(-3.5,53.2, 6.2) %>% 
   setMapWidgetStyle(list(background = "white")) %>% addProviderTiles(providers$CartoDB.Positron, providerTileOptions(opacity = 1) ) %>% 
   addMapPane(name = "toplayer", zIndex = 420) %>% 
   addMapPane(name = "nottoplayer", zIndex = 410) %>% 
@@ -204,8 +205,8 @@ m2 <- leaflet(msoas_eandw_db, height = "580px", options = list(padding = 100)) %
     addLegendCustom(colors = c("grey", "grey", "grey"), 
                   labels = c("10 deaths per 100k","100 deaths per 100k","500 deaths per 100k"),
                   
-                  sizes = c(0.94,3.00,6.71)*2, position = "bottomright" ) %>% 
-    addLegend(pal = factpal, values = msoas_eandw$`IMD MSOA Deciles`, labels = levels(msoas_eandw$`IMD MSOA Deciles`), position = "bottomright") %>% 
+                  sizes = c(0.94,3.00,6.71)*2, position = "topright" ) %>% 
+    addLegend(pal = factpal, values = msoas_eandw$`IMD MSOA Deciles`, labels = levels(msoas_eandw$`IMD MSOA Deciles`), position = "topright") %>% 
   removeDrawToolbar(clearFeatures = T) %>% 
  addResetMapButton() 
 m2
@@ -219,6 +220,6 @@ combo <- htmltools::tagList(m2, tbl,sources) #I think this makes a combined html
 browsable(combo)
 
 ############# Move index.html and lib folder manually into /docs htmltools doesn't support detailed file paths :( )
-htmltools::save_html(combo, "index.html", background = "#FFFCF1") #this saves it as an HTML page in the default folder.
+htmltools::save_html(combo, "index.html") #this saves it as an HTML page in the default folder.
 
 
