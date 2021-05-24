@@ -119,8 +119,8 @@ selected_data <- selected_data %>% select(GEOGRAPHY_CODE, `House of Commons Libr
                                           `Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived).x`) %>% 
   rename("COVID-19 Adjusted Mortality Rate per 100,000" = `COVID.19.AMR`)
 
-msoas <- geojson_sp("https://opendata.arcgis.com/datasets/87aa4eb6393644768a5f85929cc704c2_0.geojson") #super generalised (20m) - clipped to the coastline (Mean High Water mark); 
-
+#msoas <- geojson_sp("https://opendata.arcgis.com/datasets/87aa4eb6393644768a5f85929cc704c2_0.geojson") #super generalised (20m) - clipped to the coastline (Mean High Water mark); 
+msoas <- geojson_sp("https://opendata.arcgis.com/datasets/80223f1d571c405fb2fdf719c7e6da13_0.geojson")
 
 #merge data and MSOA/iz boundaries
 msoas_eandw <- merge(msoas, selected_data, by.x = "MSOA11CD", by.y = "GEOGRAPHY_CODE", all.y = T) #merge in our data
@@ -220,6 +220,6 @@ combo <- htmltools::tagList(m2, tbl,sources) #I think this makes a combined html
 browsable(combo)
 
 ############# Move index.html and lib folder manually into /docs htmltools doesn't support detailed file paths :( )
-htmltools::save_html(combo, "index.html") #this saves it as an HTML page in the default folder.
+#htmltools::save_html(combo, "index.html") #this saves it as an HTML page in the default folder.
 
 
